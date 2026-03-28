@@ -23,6 +23,14 @@ def home_menu(user_id):
 
     return InlineKeyboardMarkup(buttons)
 
+@Client.on_callback_query(filters.regex("home"))
+async def go_home(client, query):
+    from plugins.start import home_menu
+    await query.message.edit_text(
+        "🏠 Home",
+        reply_markup=home_menu(query.from_user.id)
+    )
+
 @Client.on_message(filters.command("start"))
 async def start(client, message):
     user_id = message.from_user.id
