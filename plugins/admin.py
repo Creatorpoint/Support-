@@ -1,14 +1,23 @@
 from pyrogram import Client, filters
+from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from config import ADMINS
-from database import get_users, ban_user
+from database import get_users
 
-@Client.on_message(filters.command("stats") & filters.user(ADMINS))
-async def stats(client, message):
+@Client.on_callback_query(filters.regex("admin_menu"))
+async def admin_menu(client, query):
+    if query.from_user.id not in ADMINS:
+        return
+
+    await query.message.edit_text(
+        "⚙️ Admin Panel",
+        reply_markup=InlineKeyboardMarkup([
+            [InlineKeyboardButton("📊 Stats", callback_data="stats")],
+            [InlineKeyboardButton("📢 Broadcast", callback_data="broadcast")],
+            [InlineKeyboardButton("⬅️ Back", callback_data="home")]
+        ])
+    )
+
+@Client.on_callback_query(filters.regex("stats"))
+async def stats(client, query):
     users = await get_users()
-    await message.reply(f"👥 Total Users: {len(users)}")
-
-@Client.on_message(filters.command("ban") & filters.user(ADMINS))
-async def ban(client, message):
-    user_id = int(message.text.split()[1])
-    await ban_user(user_id)
-    await message.reply("🚫 User Banned")
+    await query.answer(f"👥 Users: {len(users)}", show_alert=True)
