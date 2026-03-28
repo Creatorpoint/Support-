@@ -1,64 +1,48 @@
 import asyncio
-import logging
 from threading import Thread
 from flask import Flask
+from pyrogram import Client, filters, idle
 
-from pyrogram import Client, idle
-from config import *
+import os
 
-# ------------------ LOGGING ------------------
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-)
+# -------- CONFIG --------
+API_ID = int(os.getenv("API_ID"))
+API_HASH = os.getenv("API_HASH")
+BOT_TOKEN = os.getenv("BOT_TOKEN")
 
-# ------------------ FLASK SERVER ------------------
-web_app = Flask(__name__)
+# -------- FLASK --------
+web = Flask(__name__)
 
-@web_app.route('/')
+@web.route("/")
 def home():
-    return "✅ Bot is Running Successfully!"
+    return "Bot Running ✅"
 
 def run_web():
-    web_app.run(host="0.0.0.0", port=10000)
+    web.run(host="0.0.0.0", port=10000)
 
-# ------------------ PYROGRAM BOT ------------------
+# -------- BOT --------
 app = Client(
-    "support_bot",
+    "bot",
     api_id=API_ID,
     api_hash=API_HASH,
-    bot_token=BOT_TOKEN,
-    plugins=dict(root="plugins")
+    bot_token=BOT_TOKEN
 )
 
-# ------------------ MAIN FUNCTION ------------------
-async def start_bot():
-    try:
-        await app.start()
-        print("🚀 BOT STARTED SUCCESSFULLY")
+@app.on_message(filters.command("start"))
+async def start(client, message):
+    print("✅ START COMMAND RECEIVED")
+    await message.reply_text("🔥 Finally Bot Working!")
 
-        # Bot info print
-        me = await app.get_me()
-        print(f"🤖 Bot Name: {me.first_name}")
-        print(f"🆔 Username: @{me.username}")
+@app.on_message()
+async def all_msg(client, message):
+    print("📩 MSG:", message.text)
 
-        await idle()
+# -------- MAIN --------
+async def main():
+    await app.start()
+    print("🚀 BOT STARTED SUCCESSFULLY")
+    await idle()
 
-    except Exception as e:
-        print(f"❌ BOT ERROR: {e}")
-
-    finally:
-        await app.stop()
-        print("🛑 BOT STOPPED")
-
-# ------------------ START EVERYTHING ------------------
 if __name__ == "__main__":
-    try:
-        # Flask server start (background)
-        Thread(target=run_web).start()
-
-        # Bot start
-        asyncio.run(start_bot())
-
-    except Exception as e:
-        print(f"🔥 FATAL ERROR: {e}")
+    Thread(target=run_web).start()
+    asyncio.run(main())
