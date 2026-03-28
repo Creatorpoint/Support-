@@ -1,6 +1,8 @@
 from pyrogram import Client
 from config import *
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from database import get_users
+import asyncio
 
 app = Client(
     "support_bot",
@@ -10,12 +12,27 @@ app = Client(
     plugins=dict(root="plugins")
 )
 
-# Optional cron job
 scheduler = AsyncIOScheduler()
 
+# Example cron job
 async def auto_msg():
-    pass  # keep empty or use later
+    users = await get_users()
+    for user in users:
+        try:
+            await app.send_message(user, "🔥 Hello from bot")
+        except:
+            pass
 
-scheduler.start()
+scheduler.add_job(auto_msg, "interval", hours=24)
 
-app.run()
+# ✅ Correct startup
+async def main():
+    await app.start()
+    scheduler.start()   # अब event loop चल रहा है ✅
+    print("✅ BOT STARTED")
+    await idle()
+
+from pyrogram import idle
+
+if __name__ == "__main__":
+    asyncio.run(main())
