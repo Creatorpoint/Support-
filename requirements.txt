@@ -1,5 +1,6 @@
 pyrogram
 tgcrypto
+flask
 motor
 apscheduler
 python-dotenv
