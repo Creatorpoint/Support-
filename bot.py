@@ -1,9 +1,28 @@
-from pyrogram import Client
-from config import *
-from apscheduler.schedulers.asyncio import AsyncIOScheduler
-from database import get_users
 import asyncio
+import logging
+from threading import Thread
+from flask import Flask
 
+from pyrogram import Client, idle
+from config import *
+
+# ------------------ LOGGING ------------------
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+)
+
+# ------------------ FLASK SERVER ------------------
+web_app = Flask(__name__)
+
+@web_app.route('/')
+def home():
+    return "✅ Bot is Running Successfully!"
+
+def run_web():
+    web_app.run(host="0.0.0.0", port=10000)
+
+# ------------------ PYROGRAM BOT ------------------
 app = Client(
     "support_bot",
     api_id=API_ID,
@@ -12,27 +31,34 @@ app = Client(
     plugins=dict(root="plugins")
 )
 
-scheduler = AsyncIOScheduler()
+# ------------------ MAIN FUNCTION ------------------
+async def start_bot():
+    try:
+        await app.start()
+        print("🚀 BOT STARTED SUCCESSFULLY")
 
-# Example cron job
-async def auto_msg():
-    users = await get_users()
-    for user in users:
-        try:
-            await app.send_message(user, "🔥 Hello from bot")
-        except:
-            pass
+        # Bot info print
+        me = await app.get_me()
+        print(f"🤖 Bot Name: {me.first_name}")
+        print(f"🆔 Username: @{me.username}")
 
-scheduler.add_job(auto_msg, "interval", hours=24)
+        await idle()
 
-# ✅ Correct startup
-async def main():
-    await app.start()
-    scheduler.start()   # अब event loop चल रहा है ✅
-    print("✅ BOT STARTED")
-    await idle()
+    except Exception as e:
+        print(f"❌ BOT ERROR: {e}")
 
-from pyrogram import idle
+    finally:
+        await app.stop()
+        print("🛑 BOT STOPPED")
 
+# ------------------ START EVERYTHING ------------------
 if __name__ == "__main__":
-    asyncio.run(main())
+    try:
+        # Flask server start (background)
+        Thread(target=run_web).start()
+
+        # Bot start
+        asyncio.run(start_bot())
+
+    except Exception as e:
+        print(f"🔥 FATAL ERROR: {e}")
